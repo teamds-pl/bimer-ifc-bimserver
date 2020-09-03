@@ -10,11 +10,9 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.io.IOUtils;
 import org.bimserver.plugins.renderengine.RenderEngineException;
 import org.bimserver.shared.exceptions.PluginException;
-import org.ifcopenshell.IfcGeomServerClientEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,7 +24,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -42,9 +42,6 @@ public class DsIfcGeomServerClient implements AutoCloseable {
     private Process process = null;
     private LittleEndianDataInputStream dis = null;
     private LittleEndianDataOutputStream dos = null;
-    private boolean hasMore = false;
-
-    private volatile boolean running = true;
 
     private String executableFilename;
 
@@ -58,7 +55,6 @@ public class DsIfcGeomServerClient implements AutoCloseable {
 
     @Override
     public void close() throws RenderEngineException {
-        running = false;
         terminate();
     }
 
@@ -149,8 +145,13 @@ public class DsIfcGeomServerClient implements AutoCloseable {
         File tempFile = File.createTempFile(fileName, Long.toString(System.currentTimeMillis()));
         tempFile.deleteOnExit();
         String pathInZip = "geomserver" + File.separator + fileName;
-        try (final ZipFile zipFile = new ZipFile(location)) {
-            extract(zipFile, pathInZip, tempFile);
+        if (location.isDirectory()) {
+            Path zipFile = Paths.get(location.getPath(), pathInZip);
+            Files.copy(zipFile, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } else {
+            try (final ZipFile zipFile = new ZipFile(location)) {
+                extract(zipFile, pathInZip, tempFile);
+            }
         }
         return tempFile;
     }
@@ -205,10 +206,8 @@ public class DsIfcGeomServerClient implements AutoCloseable {
     private static final int BYE = NEXT + 1;
     private static final int GET_LOG = BYE + 1;
     private static final int LOG = GET_LOG + 1;
-    private static final int DEFLECTION = LOG + 1;
-    private static final int SETTING = DEFLECTION + 1;
 
-    private static String VERSION = "IfcOpenShell-0.6.0a1-0";
+    private static final String VERSION = "IfcOpenShell-0.6.0a1-0";
 
     abstract static class Command {
 
@@ -329,95 +328,6 @@ public class DsIfcGeomServerClient implements AutoCloseable {
         }
     }
 
-    static class More extends Command {
-
-        private Boolean more;
-
-        public Boolean hasMore() {
-            return more;
-        }
-
-        More() {
-            super(MORE);
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            more = s.readInt() == 1;
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    static class IfcModel extends Command {
-
-        private final InputStream ifcInputStream;
-        private long length = -1;
-
-        IfcModel(InputStream ifcInputStream) {
-            super(IFC_MODEL);
-            this.ifcInputStream = ifcInputStream;
-        }
-
-        IfcModel(InputStream ifcInputStream, long length) {
-            super(IFC_MODEL);
-            this.ifcInputStream = ifcInputStream;
-            this.length = length;
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) throws IOException {
-            if (length == -1) {
-                // This is now the point where memory problems will arise for large models
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                IOUtils.copy(ifcInputStream, baos);
-                writeStringBinary(s, baos.toByteArray());
-            } else {
-                writeStringBinary(s, ifcInputStream, (int) length);
-            }
-        }
-    }
-
-    static class Get extends Command {
-
-        Get() {
-            super(GET);
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) {
-        }
-    }
-
-    static class Next extends Command {
-
-        Next() {
-            super(NEXT);
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) {
-        }
-    }
-
     static class Bye extends Command {
 
         Bye() {
@@ -430,56 +340,6 @@ public class DsIfcGeomServerClient implements AutoCloseable {
 
         @Override
         void write_contents(LittleEndianDataOutputStream s) {
-        }
-    }
-
-    static class Entity extends Command {
-
-        private IfcGeomServerClientEntity entity;
-
-        Entity() {
-            super(ENTITY);
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s0) throws IOException {
-            byte[] message = new byte[len];
-            s0.readFully(message, 0, len);
-            ByteArrayInputStream bis = new ByteArrayInputStream(message);
-            LittleEndianDataInputStream s = new LittleEndianDataInputStream(bis);
-            entity = new IfcGeomServerClientEntity(
-                    s.readInt(),
-                    readString(s),
-                    readString(s),
-                    readString(s),
-                    s.readInt(),
-                    readDoubleArray(s),
-                    s.readInt(),
-                    readFloatArray(s),
-                    readFloatArray(s),
-                    readIntArray(s),
-                    readFloatArray(s),
-                    readIntArray(s),
-                    readRemainder(bis)
-            );
-        }
-
-        private String readRemainder(ByteArrayInputStream bis) {
-            if (bis.available() == 0) {
-                return null;
-            }
-            byte[] remainder = new byte[bis.available()];
-            bis.read(remainder, 0, remainder.length);
-            return new String(remainder);
-        }
-
-        public IfcGeomServerClientEntity getEntity() {
-            return entity;
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -522,65 +382,7 @@ public class DsIfcGeomServerClient implements AutoCloseable {
         }
     }
 
-    static class Deflection extends Command {
-
-        private final double deflection;
-
-        Deflection(double deflection) {
-            super(DEFLECTION);
-            this.deflection = deflection;
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) throws IOException {
-            s.writeDouble(deflection);
-        }
-    }
-
-    static class Setting extends Command {
-
-        private final int id;
-        private final int value;
-
-        public enum SettingId {
-            APPLY_LAYERSETS(1 << 17);
-
-            private final int id;
-
-            SettingId(int id) {
-                this.id = id;
-            }
-
-            private int getId() {
-                return id;
-            }
-        }
-
-        Setting(SettingId i, boolean b) {
-            super(SETTING);
-            this.id = i.getId();
-            this.value = b ? 1 : 0;
-        }
-
-        @Override
-        void read_contents(LittleEndianDataInputStream s) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        void write_contents(LittleEndianDataOutputStream s) throws IOException {
-            s.writeInt(id);
-            s.writeInt(value);
-        }
-    }
-
     private void terminate() throws RenderEngineException {
-        hasMore = false;
         if (process == null) {
             return;
         }
@@ -645,54 +447,5 @@ public class DsIfcGeomServerClient implements AutoCloseable {
         dis = null;
         dos = null;
         process = null;
-    }
-
-    private void askForMore() throws IOException {
-        hasMore = false;
-        if (dis.readInt() != MORE) {
-            LOGGER.error("Invalid command sequence encountered");
-            throw new IOException();
-        }
-
-        More mr = new More();
-        mr.read(dis);
-
-        hasMore = mr.hasMore();
-    }
-
-    public IfcGeomServerClientEntity getNext() throws RenderEngineException {
-        try {
-            Get g = new Get();
-            g.write(dos);
-
-            if (dis.readInt() != ENTITY) {
-                LOGGER.error("Invalid command sequence encountered");
-                throw new IOException();
-            }
-            Entity e = new Entity();
-            e.read(dis);
-
-            Next n = new Next();
-            n.write(dos);
-
-            askForMore();
-
-            return e.getEntity();
-        } catch (IOException e) {
-            terminate();
-            return null;
-        }
-    }
-
-    public boolean isRunning() {
-        return running;
-    }
-
-    public boolean hasNext() {
-        return hasMore;
-    }
-
-    public String getVersion() {
-        return VERSION;
     }
 }

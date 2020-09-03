@@ -13,6 +13,7 @@ import java.io.IOException;
 public class IfcVersionValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(IfcVersionValidator.class);
+    private static final String UNABLE_TO_DETECT_IFC_VERSION = "Unable to detect IFC version";
     private final File file;
     private String version;
 
@@ -33,16 +34,16 @@ public class IfcVersionValidator {
                             int firstIndex = sline.indexOf('"') + 1;
                             version = sline.substring(sline.indexOf('"'), sline.lastIndexOf('"', firstIndex));
                         }
-                        if (version != null) {
-                            LOG.info("Detected: {} version", version);
-                            // Version found
-                            break;
-                        }
+                        LOG.info("Detected: {} version", version);
+                        break;
                     }
                 }
             }
+            if (version == null) {
+                throw new BimServerApiException(UNABLE_TO_DETECT_IFC_VERSION);
+            }
         } catch (IOException ioe) {
-            throw new BimServerApiException("Unable to detect IFC version", ioe);
+            throw new BimServerApiException(UNABLE_TO_DETECT_IFC_VERSION, ioe);
         }
     }
 
