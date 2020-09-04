@@ -24,12 +24,12 @@ public class Main {
         BimServerClient bimServerClient = new BimServerClient();
         try {
             BimServerIfcParser ifcParser = bimServerClient.start(getHomePath());
-            IfcConverter ifcConverter = new IfcConverter(ifcParser);
+            IfcToBimDsConverter ifcToBimDsConverter = new IfcToBimDsConverter(ifcParser);
             File ifcFile = resolveIfcFile(args);
-            if (!ifcConverter.canProcess(ifcFile)) {
+            if (!ifcToBimDsConverter.canProcess(ifcFile)) {
                 throw new BimServerApiException("Provided file is not IFC file");
             }
-            IfcModel ifcModel = ifcConverter.convert(ifcFile);
+            IfcModel ifcModel = ifcToBimDsConverter.convert(ifcFile);
             writeObjectToStdOut(ifcModel);
         } catch (BimServerApiException e) {
             System.err.println(e.getMessage());

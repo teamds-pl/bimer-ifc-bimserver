@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 import static pl.ds.bimserver.launcher.TestUtils.getFileFromResources;
 
 @RunWith(MockitoJUnitRunner.class)
-public class IfcConverterTest {
+public class IfcToBimDsConverterTest {
 
     @Mock
     private BimServerIfcParser parser;
@@ -25,58 +25,58 @@ public class IfcConverterTest {
     @Mock
     private IfcModel model;
 
-    private IfcConverter converter;
+    private IfcToBimDsConverter converter;
 
     @Before
     public void setup() {
-        converter = new IfcConverter(parser);
+        converter = new IfcToBimDsConverter(parser);
     }
 
     @Test
     public void shouldReturnTrueForFileWithIfcExtension() {
-        File file = getFileFromResources("test.ifc");
+        File file = getFileFromResources("ifcToBimDsConverter/fileWithIfcExtension.ifc");
         Assert.assertTrue(converter.canProcess(file));
     }
 
     @Test
     public void shouldReturnTrueForFileWithZipExtensionContainingIfcFile() {
-        File file = getFileFromResources("containsIfc.zip");
+        File file = getFileFromResources("ifcToBimDsConverter/containsIfc.zip");
         Assert.assertTrue(converter.canProcess(file));
     }
 
     @Test
     public void shouldReturnTrueForFileWithIfcZipExtensionContainingIfcFile() {
-        File file = getFileFromResources("containsIfc.ifczip");
+        File file = getFileFromResources("ifcToBimDsConverter/containsIfc.ifczip");
         Assert.assertTrue(converter.canProcess(file));
     }
 
     @Test
     public void shouldReturnFalseForFileWithIfcZipExtensionWithoutIfcFile() {
-        File file = getFileFromResources("empty.ifczip");
+        File file = getFileFromResources("ifcToBimDsConverter/empty.ifczip");
         Assert.assertFalse(converter.canProcess(file));
     }
 
     @Test
     public void shouldReturnFalseForFileWithZipExtensionWithoutIfcFile() {
-        File file = getFileFromResources("empty.zip");
+        File file = getFileFromResources("ifcToBimDsConverter/empty.zip");
         Assert.assertFalse(converter.canProcess(file));
     }
 
     @Test(expected = BimServerApiException.class)
     public void shouldThrowErrorWhenVersionIsNotSupported() throws BimServerApiException {
-        File file = getFileFromResources("notSupportedVersion.ifc");
+        File file = getFileFromResources("ifcToBimDsConverter/notSupportedVersion.ifc");
         converter.convert(file);
     }
 
     @Test
     public void shouldReturnFalseForFileWithoutIfcExtension() {
-        File file = getFileFromResources("file");
+        File file = getFileFromResources("ifcToBimDsConverter/fileWithoutExtension");
         Assert.assertFalse(converter.canProcess(file));
     }
 
     @Test
     public void shouldReturnIfcModelForIfc2X3Version() throws BimServerApiException {
-        File ifc2X3File = getFileFromResources("ifc2X3.ifc");
+        File ifc2X3File = getFileFromResources("ifcToBimDsConverter/ifc2X3Version.ifc");
         when(parser.parseIfc2x3tc1(ifc2X3File)).thenReturn(model);
         IfcModel result = converter.convert(ifc2X3File);
         Assert.assertNotNull(result);
@@ -84,7 +84,7 @@ public class IfcConverterTest {
 
     @Test
     public void shouldReturnIfcModelForIfc2X3VersionZip() throws BimServerApiException {
-        File ifc2X3ZipFile = getFileFromResources("ifc2X3.zip");
+        File ifc2X3ZipFile = getFileFromResources("ifcToBimDsConverter/ifc2X3Version.zip");
         when(parser.parseIfc2x3tc1(any())).thenReturn(model);
         IfcModel result = converter.convert(ifc2X3ZipFile);
         Assert.assertNotNull(result);
@@ -92,7 +92,7 @@ public class IfcConverterTest {
 
     @Test
     public void shouldReturnIfcModelForIfc2X3VersionIfcZip() throws BimServerApiException {
-        File ifc2X3IfcZipFile = getFileFromResources("ifc2X3.ifczip");
+        File ifc2X3IfcZipFile = getFileFromResources("ifcToBimDsConverter/ifc2X3Version.ifczip");
         when(parser.parseIfc2x3tc1(any())).thenReturn(model);
         IfcModel result = converter.convert(ifc2X3IfcZipFile);
         Assert.assertNotNull(result);
@@ -100,7 +100,7 @@ public class IfcConverterTest {
 
     @Test
     public void shouldReturnIfcModelForIfc4Version() throws BimServerApiException {
-        File ifc4File = getFileFromResources("ifc4.ifc");
+        File ifc4File = getFileFromResources("ifcToBimDsConverter/ifc4Version.ifc");
         when(parser.parseIfc4(ifc4File)).thenReturn(model);
         IfcModel result = converter.convert(ifc4File);
         Assert.assertNotNull(result);

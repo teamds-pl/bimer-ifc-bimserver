@@ -67,40 +67,40 @@ public class BimServerIfcParserImplTest {
 
     @Test
     public void shouldReturnDoorsIfcModel() throws IOException {
-        Assert.assertArrayEquals(deserialize("models/doors.data"), serialize(doorsModel));
+        Assert.assertArrayEquals(deserialize("bimServerIfcParserImplTest/doors.data"), serialize(doorsModel));
     }
 
     @Test
     public void shouldReturnDuplexIfcModel() throws IOException {
-        byte[] expecteds = deserialize("models/Duplex_A_20110907_optimized.data");
+        byte[] expecteds = deserialize("bimServerIfcParserImplTest/Duplex_A_20110907_optimized.data");
         byte[] actuals = serialize(model("Duplex_A_20110907_optimized.ifc"));
         Assert.assertArrayEquals(expecteds, actuals);
     }
 
     @Test
     public void shouldReturnWallOnlyIfcModel() throws IOException {
-        byte[] expecteds = deserialize("models/WallOnly.data");
+        byte[] expecteds = deserialize("bimServerIfcParserImplTest/WallOnly.data");
         byte[] actuals = serialize(model("WallOnly.ifc"));
         Assert.assertArrayEquals(expecteds, actuals);
     }
 
     @Test
     public void shouldReturnStairGeometryIfcModel() throws IOException {
-        byte[] expecteds = deserialize("models/stairGeometry.data");
+        byte[] expecteds = deserialize("bimServerIfcParserImplTest/stairGeometry.data");
         byte[] actuals = serialize(model("stairGeometry.ifc"));
         Assert.assertArrayEquals(expecteds, actuals);
     }
 
     @Test
     public void shouldReturnWallIfcModel() throws IOException {
-        byte[] expecteds = deserialize("models/wall.data");
+        byte[] expecteds = deserialize("bimServerIfcParserImplTest/wall.data");
         byte[] actuals = serialize(model("wall.ifc"));
         Assert.assertArrayEquals(expecteds, actuals);
     }
 
     @Test
     public void shouldReturnWallILayersfcModel() throws IOException {
-        byte[] expecteds = deserialize("models/wallLayers.data");
+        byte[] expecteds = deserialize("bimServerIfcParserImplTest/wallLayers.data");
         byte[] actuals = serialize(model("wallLayers.ifc"));
         Assert.assertArrayEquals(expecteds, actuals);
     }
@@ -120,7 +120,7 @@ public class BimServerIfcParserImplTest {
 
     private static IfcModel model(String name) {
         try {
-            File file = LOADER.getModelAsFile("models", name);
+            File file = LOADER.getModelAsFile("bimServerIfcParserImplTest", name);
             return ifcParser.parseIfc2x3tc1(file);
         } catch (BimServerApiException e) {
             throw new IllegalStateException(e);

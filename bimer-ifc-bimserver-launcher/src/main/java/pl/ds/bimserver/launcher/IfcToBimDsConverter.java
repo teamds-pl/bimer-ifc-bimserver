@@ -21,13 +21,13 @@ import java.util.zip.ZipInputStream;
 
 import static org.apache.commons.lang3.StringUtils.endsWithIgnoreCase;
 
-public class IfcConverter {
+public class IfcToBimDsConverter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(IfcConverter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IfcToBimDsConverter.class);
 
     private final BimServerIfcParser ifcParser;
 
-    public IfcConverter(BimServerIfcParser bimServerIfcParser) {
+    public IfcToBimDsConverter(BimServerIfcParser bimServerIfcParser) {
         this.ifcParser = bimServerIfcParser;
     }
 

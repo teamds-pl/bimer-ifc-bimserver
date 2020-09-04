@@ -32,7 +32,7 @@ public class IfcVersionValidator {
                             version = sline.substring(firstIndex, sline.indexOf('\'', firstIndex));
                         } else {
                             int firstIndex = sline.indexOf('"') + 1;
-                            version = sline.substring(sline.indexOf('"'), sline.lastIndexOf('"', firstIndex));
+                            version = sline.substring(firstIndex, sline.indexOf('"', firstIndex));
                         }
                         LOG.info("Detected: {} version", version);
                         break;
