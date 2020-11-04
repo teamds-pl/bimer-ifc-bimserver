@@ -43,11 +43,11 @@ public class Ifc4AddressConverter implements CustomConverter {
     }
 
     private static boolean appendAddressLines(IfcPostalAddress address, StringBuilder str, final boolean firstLine) {
-        boolean skipped = true;
+        boolean skipped = firstLine;
         if (address.getAddressLines() != null) {
             for (String line : address.getAddressLines()) {
                 if (StringUtils.isNotBlank(line)) {
-                    str.append(firstLine ? StringUtils.EMPTY : NEWLINE);
+                    str.append(skipped ? StringUtils.EMPTY : NEWLINE);
                     skipped = false;
                     str.append(line);
                 }
@@ -98,7 +98,7 @@ public class Ifc4AddressConverter implements CustomConverter {
         String postalBox = address.getPostalBox();
         if (StringUtils.isNotBlank(postalBox)) {
             str.append(firstLine ? StringUtils.EMPTY : NEWLINE);
-            str.append(NEWLINE).append(postalBox);
+            str.append(postalBox);
             return false;
         }
         return firstLine;
