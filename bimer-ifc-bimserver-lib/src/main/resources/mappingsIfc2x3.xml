@@ -11,6 +11,10 @@
             <b>representationContexts</b>
             <b-hint>pl.ds.bimer.ifc.data.model.impl.IfcRepresentationContextImpl</b-hint>
         </field>
+        <field type="one-way" custom-converter="pl.ds.bimserver.model.converter.Ifc2x3tc1LengthUnitConverter">
+            <a>unitsInContext</a>
+            <b>lengthUnit</b>
+        </field>
     </mapping>
 
     <mapping>
