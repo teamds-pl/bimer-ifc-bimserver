@@ -18,6 +18,7 @@
     <modules>
         <module>bimer-ifc-bimserver-lib</module>
         <module>bimer-ifc-bimserver-launcher</module>
+        <module>bimer-ifc-bimserver-launcher-aws</module>
     </modules>
 
     <dependencies>

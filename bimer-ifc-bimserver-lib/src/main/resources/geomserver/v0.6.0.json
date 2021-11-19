@@ -1,21 +1,27 @@
-[{
-	"product": "IfcGeomServer",
-	"platform": "Linux 32",
-	"filename": "IfcGeomServer-v0.6.0-5526f42-linux32.zip"
-}, {
-	"product": "IfcGeomServer",
-	"platform": "Linux 64",
-	"filename": "IfcGeomServer-v0.6.0-5526f42-linux64.zip"
-}, {
-	"product": "IfcGeomServer",
-	"platform": "macOS 64",
-	"filename": "IfcGeomServer-v0.6.0-5526f42-macos64.zip"
-}, {
-	"product": "IfcGeomServer",
-	"platform": "Win 32",
-	"filename": "IfcGeomServer-v0.6.0-5526f42-win32.zip"
-}, {
-	"product": "IfcGeomServer",
-	"platform": "Win 64",
-	"filename": "IfcGeomServer-v0.6.0-5526f42-win64.zip"
-}]
+[
+  {
+    "product": "IfcGeomServer",
+    "platform": "Linux 32",
+    "filename": "IfcGeomServer-v0.6.0-5526f42-linux32.zip"
+  },
+  {
+    "product": "IfcGeomServer",
+    "platform": "Linux 64",
+    "filename": "IfcGeomServer-v0.6.0-5526f42-linux64.zip"
+  },
+  {
+    "product": "IfcGeomServer",
+    "platform": "macOS 64",
+    "filename": "IfcGeomServer-v0.6.0-5526f42-macos64.zip"
+  },
+  {
+    "product": "IfcGeomServer",
+    "platform": "Win 32",
+    "filename": "IfcGeomServer-v0.6.0-5526f42-win32.zip"
+  },
+  {
+    "product": "IfcGeomServer",
+    "platform": "Win 64",
+    "filename": "IfcGeomServer-v0.6.0-5526f42-win64.zip"
+  }
+]
