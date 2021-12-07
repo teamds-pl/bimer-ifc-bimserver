@@ -207,7 +207,7 @@ public class DsIfcGeomServerClient implements AutoCloseable {
     private static final int GET_LOG = BYE + 1;
     private static final int LOG = GET_LOG + 1;
 
-    private static final String VERSION = "IfcOpenShell-0.6.0a1-0";
+    private static final String VERSION = "IfcOpenShell-0.6.0b0-0";
 
     abstract static class Command {
 

@@ -1,5 +1,14 @@
 package pl.ds.bimserver.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -11,15 +20,6 @@ import pl.ds.bimserver.BimServerApiException;
 import pl.ds.bimserver.BimServerIfcParser;
 import pl.ds.bimserver.test.TestDataLoader;
 import pl.ds.bimserver.test.TestUtils;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +59,10 @@ public class BimServerIfcParserImplTest {
     @Test
     public void shouldContainProjectDecomposedByBuilding() {
         IfcProject project = model("doors.ifc").getProject();
-        String firstDecomposingObjectType = project.getIsDecomposedBy().stream().findFirst().flatMap(ifcRelation -> ifcRelation.getRelatedObjects().stream().findFirst().map(IfcObjectDefinition::getType)).orElse(null);
+        String firstDecomposingObjectType = project.getIsDecomposedBy().stream()
+                .findFirst()
+                .flatMap(ifcRelation -> ifcRelation.getRelatedObjects().stream().findFirst().map(IfcObjectDefinition::getType))
+                .orElse(null);
         assertEquals("Building", firstDecomposingObjectType);
     }
 
@@ -102,13 +105,6 @@ public class BimServerIfcParserImplTest {
     public void shouldReturnWallILayersIfcModel() throws IOException {
         byte[] actualSerializedData = serialize(model("wallLayers.ifc"));
         byte[] expectedSerializedData = deserialize("wallLayers.data");
-        assertArrayEquals(expectedSerializedData, actualSerializedData);
-    }
-
-    @Test
-    public void shouldReturnBimer6xPowerProjectIfcModel() throws IOException {
-        byte[] actualSerializedData = serialize(model("bim6x-power-project.ifc"));
-        byte[] expectedSerializedData = deserialize("bim6x-power-project.data");
         assertArrayEquals(expectedSerializedData, actualSerializedData);
     }
 

@@ -1,5 +1,15 @@
 package pl.ds.bimserver.impl;
 
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.bimserver.emf.IfcModelInterface;
 import org.bimserver.geometry.Matrix;
 import org.bimserver.models.geometry.Bounds;
@@ -20,16 +30,6 @@ import org.bimserver.plugins.renderengine.RenderEngineModel;
 import org.bimserver.plugins.renderengine.RenderEngineSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 abstract class AbstractInputStreamGeometryGenerator {
 
@@ -71,83 +71,92 @@ abstract class AbstractInputStreamGeometryGenerator {
 
     protected abstract void generateForAllIfcProducts();
 
-    protected GeometryInfo generateGeometry(int expressId) {
+    protected GeometryInfo generateGeometry(long expressId) {
         try {
             RenderEngineInstance renderEngineInstance = renderEngineModel.getInstanceFromExpressId(expressId);
             RenderEngineGeometry geometry = renderEngineInstance.generateGeometry();
-            boolean translate = true;
-            if (geometry != null && geometry.getNrIndices() > 0) {
-                GeometryInfo geometryInfo = GeometryFactory.eINSTANCE.createGeometryInfo();
+            if (geometry != null) {
+                setLittleEndianOrderForByteBuffers(geometry);
+                int nrIndices = geometry.getNrIndices();
+                if (nrIndices > 0) {
+                    GeometryInfo geometryInfo = GeometryFactory.eINSTANCE.createGeometryInfo();
 
-                Bounds bounds = GeometryFactory.eINSTANCE.createBounds();
+                    Bounds bounds = GeometryFactory.eINSTANCE.createBounds();
 
-                bounds.setMin(createVector3f(Double.POSITIVE_INFINITY));
-                bounds.setMax(createVector3f(-Double.POSITIVE_INFINITY));
+                    bounds.setMin(createVector3f(Double.POSITIVE_INFINITY));
+                    bounds.setMax(createVector3f(-Double.POSITIVE_INFINITY));
 
-                geometryInfo.setBounds(bounds);
+                    geometryInfo.setBounds(bounds);
 
-                try {
-                    double area = renderEngineInstance.getArea();
-                    geometryInfo.setArea(area);
-                    double volume = renderEngineInstance.getVolume();
-                    if (volume < 0d) {
-                        volume = -volume;
+                    try {
+                        double area = geometryInfo.getArea();
+                        geometryInfo.setArea(area);
+                        double volume = geometryInfo.getVolume();
+                        if (volume < 0d) {
+                            volume = -volume;
+                        }
+                        geometryInfo.setVolume(volume);
+                    } catch (UnsupportedOperationException e) {
+                        LOGGER.trace("Exception during setting volume", e);
                     }
-                    geometryInfo.setVolume(volume);
 
-                } catch (UnsupportedOperationException e) {
-                    LOGGER.trace("Exception during setting volume", e);
-                }
+                    GeometryData geometryData = GeometryFactory.eINSTANCE.createGeometryData();
+                    geometryData.setIndices(createBuffer(geometry.getIndices()));
+                    geometryData.setVertices(createBuffer(geometry.getVertices()));
+                    geometryData.setNormals(createBuffer(geometry.getNormals()));
 
-                GeometryData geometryData = GeometryFactory.eINSTANCE.createGeometryData();
+                    geometryInfo.setPrimitiveCount(nrIndices / 3);
 
-                geometryData.setIndices(createBuffer(intArrayToByteArray(geometry.getIndices())));
-                geometryData.setVertices(createBuffer(floatArrayToByteArray(geometry.getVertices())));
-                geometryData.setNormals(createBuffer(floatArrayToByteArray(geometry.getNormals())));
-
-                geometryInfo.setPrimitiveCount(geometry.getIndices().length / 3);
-
-                if (geometry.getMaterialIndices() != null && geometry.getMaterialIndices().length > 0) {
-                    boolean hasMaterial = false;
-                    float[] vertex_colors = new float[geometry.getVertices().length / 3 * 4];
-                    for (int i = 0; i < geometry.getMaterialIndices().length; ++i) {
-                        int c = geometry.getMaterialIndices()[i];
-                        for (int j = 0; j < 3; ++j) {
-                            int k = geometry.getIndices()[i * 3 + j];
-                            if (c > -1) {
-                                hasMaterial = true;
-                                for (int l = 0; l < 4; ++l) {
-                                    vertex_colors[4 * k + l] = geometry.getMaterials()[4 * c + l];
+                    IntBuffer indicesBuffer = geometry.getIndices().asIntBuffer();
+                    if (geometry.getMaterialIndices() != null) {
+                        IntBuffer materialIndicesBuffer = geometry.getMaterialIndices().asIntBuffer();
+                        FloatBuffer materialsBuffer = geometry.getMaterials().asFloatBuffer();
+                        int materialIndicesLength = geometry.getNrMaterialIndices();
+                        if (materialIndicesLength > 0) {
+                            boolean hasMaterial = false;
+                            float[] vertexColors = new float[geometry.getNrVertices() / 3 * 4];
+                            for (int i = 0; i < materialIndicesLength; ++i) {
+                                int c = materialIndicesBuffer.get(i);
+                                for (int j = 0; j < 3; ++j) {
+                                    int k = indicesBuffer.get(i * 3 + j);
+                                    if (c > -1) {
+                                        hasMaterial = true;
+                                        for (int l = 0; l < 4; ++l) {
+                                            vertexColors[4 * k + l] = materialsBuffer.get(4 * c + l);
+                                        }
+                                    }
                                 }
+                            }
+                            if (hasMaterial) {
+                                geometryData.setColorsQuantized(createBuffer(floatArrayToByteArray(vertexColors)));
                             }
                         }
                     }
-                    if (hasMaterial) {
-                        geometryData.setColorsQuantized(createBuffer(floatArrayToByteArray(vertex_colors)));
+
+                    double[] transformationMatrix = new double[16];
+                    Matrix.setIdentityM(transformationMatrix, 0);
+                    if (renderEngineInstance.getTransformationMatrix() != null) {
+                        transformationMatrix = renderEngineInstance.getTransformationMatrix();
                     }
+
+                    DoubleBuffer verticesBuffer = geometry.getVertices().asDoubleBuffer();
+                    for (int i = 0; i < nrIndices; i++) {
+                        int index = indicesBuffer.get(i) * 3;
+                        processExtends(geometryInfo, verticesBuffer, transformationMatrix, index);
+                    }
+
+                    geometryInfo.setData(geometryData);
+
+                    setTransformationMatrix(geometryInfo, transformationMatrix);
+                    int hash = hash(geometryData);
+                    if (hashes.containsKey(hash)) {
+                        geometryInfo.setData(hashes.get(hash));
+                    } else {
+                        hashes.put(hash, geometryData);
+                    }
+
+                    return geometryInfo;
                 }
-
-                double[] tranformationMatrix = new double[16];
-                Matrix.setIdentityM(tranformationMatrix, 0);
-                if (translate && renderEngineInstance.getTransformationMatrix() != null) {
-                    tranformationMatrix = renderEngineInstance.getTransformationMatrix();
-                }
-
-                for (int i = 0; i < geometry.getIndices().length; i++) {
-                    processExtends(geometryInfo, tranformationMatrix, geometry.getVertices(), geometry.getIndices()[i] * 3);
-                }
-
-                geometryInfo.setData(geometryData);
-
-                setTransformationMatrix(geometryInfo, tranformationMatrix);
-                int hash = hash(geometryData);
-                if (hashes.containsKey(hash)) {
-                    geometryInfo.setData(hashes.get(hash));
-                } else {
-                    hashes.put(hash, geometryData);
-                }
-
-                return geometryInfo;
             }
         } catch (EntityNotFoundException e) {
             LOGGER.trace("Entity not found", e);
@@ -157,34 +166,37 @@ abstract class AbstractInputStreamGeometryGenerator {
         return null;
     }
 
+    private void setLittleEndianOrderForByteBuffers(RenderEngineGeometry geometry) {
+        // explicit setting little endian for byte buffers, because we get little endian from server,
+        // but these buffers are created with big endian order and read values are incorrect
+        geometry.getIndices().order(ByteOrder.LITTLE_ENDIAN);
+        geometry.getVertices().order(ByteOrder.LITTLE_ENDIAN);
+        geometry.getNormals().order(ByteOrder.LITTLE_ENDIAN);
+        geometry.getMaterials().order(ByteOrder.LITTLE_ENDIAN);
+        geometry.getMaterialIndices().order(ByteOrder.LITTLE_ENDIAN);
+    }
+
     private Buffer createBuffer(byte[] data) {
         Buffer buffer = GeometryFactory.eINSTANCE.createBuffer();
         buffer.setData(data);
         return buffer;
     }
 
-    private byte[] floatArrayToByteArray(float[] vertices) {
-        if (vertices == null) {
-            return null;
-        }
-        ByteBuffer buffer = ByteBuffer.wrap(new byte[vertices.length * 4]);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        FloatBuffer asFloatBuffer = buffer.asFloatBuffer();
-        for (float f : vertices) {
-            asFloatBuffer.put(f);
-        }
-        return buffer.array();
+    private Buffer createBuffer(ByteBuffer data) {
+        Buffer buffer = GeometryFactory.eINSTANCE.createBuffer();
+        buffer.setData(data.array());
+        return buffer;
     }
 
-    private byte[] intArrayToByteArray(int[] indices) {
-        if (indices == null) {
+    private byte[] floatArrayToByteArray(float[] values) {
+        if (values == null) {
             return null;
         }
-        ByteBuffer buffer = ByteBuffer.wrap(new byte[indices.length * 4]);
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[values.length * 4]);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        IntBuffer asIntBuffer = buffer.asIntBuffer();
-        for (int i : indices) {
-            asIntBuffer.put(i);
+        FloatBuffer asFloatBuffer = buffer.asFloatBuffer();
+        for (float f : values) {
+            asFloatBuffer.put(f);
         }
         return buffer.array();
     }
@@ -224,12 +236,12 @@ abstract class AbstractInputStreamGeometryGenerator {
         return hashCode;
     }
 
-    private void processExtends(GeometryInfo geometryInfo, double[] transformationMatrix, float[] vertices, int index) {
-        double x = vertices[index];
-        double y = vertices[index + 1];
-        double z = vertices[index + 2];
+    private void processExtends(GeometryInfo geometryInfo, DoubleBuffer verticesBuffer, double[] transformationMatrix, int index) {
+        double x = verticesBuffer.get(index);
+        double y = verticesBuffer.get(index + 1);
+        double z = verticesBuffer.get(index + 2);
         double[] result = new double[4];
-        Matrix.multiplyMV(result, 0, transformationMatrix, 0, new double[]{x, y, z, 1}, 0);
+        Matrix.multiplyMV(result, 0, transformationMatrix, 0, new double[] { x, y, z, 1 }, 0);
         x = result[0];
         y = result[1];
         z = result[2];

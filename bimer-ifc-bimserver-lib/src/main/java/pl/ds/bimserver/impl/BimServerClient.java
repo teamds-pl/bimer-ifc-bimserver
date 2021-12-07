@@ -18,7 +18,7 @@ public class BimServerClient {
         LOG.info("Initializing MetaDataManager service");
         try {
             MetaDataManager metaDataManager = new MetaDataManager(Files.createTempDirectory("org.bimserver.emf.MetaDataManager"));
-            metaDataManager.init();
+            metaDataManager.init(true);
             return initBimServerParser(homePath, metaDataManager);
         } catch (IOException | RenderEngineException e) {
             throw new BimServerApiException("Could not start Bim Server", e);

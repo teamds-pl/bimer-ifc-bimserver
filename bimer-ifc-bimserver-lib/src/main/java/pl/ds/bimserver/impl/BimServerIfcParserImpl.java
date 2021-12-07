@@ -1,5 +1,12 @@
 package pl.ds.bimserver.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.github.dozermapper.core.DozerBeanMapperBuilder;
 import com.github.dozermapper.core.Mapper;
 import org.bimserver.emf.IdEObject;
@@ -23,12 +30,6 @@ import pl.ds.bimer.ifc.data.model.impl.IfcSiteImpl;
 import pl.ds.bimer.ifc.data.model.impl.IfcSpatialStructureElementImpl;
 import pl.ds.bimserver.BimServerApiException;
 import pl.ds.bimserver.BimServerIfcParser;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class BimServerIfcParserImpl implements BimServerIfcParser {
 
@@ -75,7 +76,8 @@ public class BimServerIfcParserImpl implements BimServerIfcParser {
         }
     }
 
-    private IfcModel generateIfcModel(IfcModelInterface model, Class<? extends IdEObject> projectClass, Class<? extends IdEObject> productClass) {
+    private IfcModel generateIfcModel(IfcModelInterface model, Class<? extends IdEObject> projectClass,
+            Class<? extends IdEObject> productClass) {
         IfcModelImpl dataModel = new IfcModelImpl();
         List<IfcProduct> products = model.getAllWithSubTypes(productClass)
                 .stream().map(p -> mapper.map(p, getDestinationClass(p.getClass()))).collect(Collectors.toList());
@@ -109,7 +111,8 @@ public class BimServerIfcParserImpl implements BimServerIfcParser {
     }
 
     private void generateGeometry(File file, IfcModelInterface model, boolean isIfc2x3tc1) {
-        try (IfcOpenShellEngine renderEngine = new IfcOpenShellEngine(geomServerPathProvider.getGeomServerExecutablePath())) {
+        try (IfcOpenShellEngine renderEngine = new IfcOpenShellEngine(Paths.get(geomServerPathProvider.getGeomServerExecutablePath()),
+                true, true)) {
             renderEngine.init();
             LOG.info("Using executable " + geomServerPathProvider.getGeomServerExecutablePath());
 
