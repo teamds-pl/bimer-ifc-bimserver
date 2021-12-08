@@ -108,6 +108,15 @@ public class BimServerIfcParserImplTest {
         assertArrayEquals(expectedSerializedData, actualSerializedData);
     }
 
+    @Test
+    public void shouldReturnIfc4ModelWithNestedLists() throws IOException {
+        // this model is copied from:
+        // https://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2_TC1/HTML/annex/annex-e/slab-standard-case.ifc
+        byte[] actualSerializedData = serialize(model4("ifc4-nested-list.ifc"));
+        byte[] expectedSerializedData = deserialize("ifc4-nested-list.data");
+        assertArrayEquals(expectedSerializedData, actualSerializedData);
+    }
+
     private byte[] serialize(Object obj) throws IOException {
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         ObjectOutputStream o = new ObjectOutputStream(b);
@@ -125,6 +134,15 @@ public class BimServerIfcParserImplTest {
         try {
             File file = LOADER.getModelAsFile("bimServerIfcParserImplTest", name);
             return ifcParser.parseIfc2x3tc1(file);
+        } catch (BimServerApiException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static IfcModel model4(String name) {
+        try {
+            File file = LOADER.getModelAsFile("bimServerIfcParserImplTest", name);
+            return ifcParser.parseIfc4(file);
         } catch (BimServerApiException e) {
             throw new IllegalStateException(e);
         }

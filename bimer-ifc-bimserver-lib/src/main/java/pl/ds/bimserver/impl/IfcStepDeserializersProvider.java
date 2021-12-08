@@ -1,6 +1,6 @@
 package pl.ds.bimserver.impl;
 
-import org.bimserver.ifc.step.deserializer.IfcStepDeserializer;
+import pl.ds.bimserver.deserializer.IfcStepDeserializer;
 
 interface IfcStepDeserializersProvider {
 

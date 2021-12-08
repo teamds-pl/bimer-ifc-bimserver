@@ -11,7 +11,6 @@ import com.github.dozermapper.core.DozerBeanMapperBuilder;
 import com.github.dozermapper.core.Mapper;
 import org.bimserver.emf.IdEObject;
 import org.bimserver.emf.IfcModelInterface;
-import org.bimserver.ifc.step.deserializer.IfcStepDeserializer;
 import org.bimserver.models.ifc2x3tc1.IfcProject;
 import org.bimserver.plugins.deserializers.DeserializeException;
 import org.bimserver.plugins.renderengine.RenderEngineException;
@@ -30,6 +29,7 @@ import pl.ds.bimer.ifc.data.model.impl.IfcSiteImpl;
 import pl.ds.bimer.ifc.data.model.impl.IfcSpatialStructureElementImpl;
 import pl.ds.bimserver.BimServerApiException;
 import pl.ds.bimserver.BimServerIfcParser;
+import pl.ds.bimserver.deserializer.IfcStepDeserializer;
 
 public class BimServerIfcParserImpl implements BimServerIfcParser {
 

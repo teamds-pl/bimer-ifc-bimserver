@@ -3,9 +3,9 @@ package pl.ds.bimserver.impl;
 import org.bimserver.emf.MetaDataManager;
 import org.bimserver.emf.PackageMetaData;
 import org.bimserver.emf.Schema;
-import org.bimserver.ifc.step.deserializer.Ifc2x3tc1StepDeserializer;
-import org.bimserver.ifc.step.deserializer.Ifc4StepDeserializer;
-import org.bimserver.ifc.step.deserializer.IfcStepDeserializer;
+import pl.ds.bimserver.deserializer.Ifc2x3tc1StepDeserializer;
+import pl.ds.bimserver.deserializer.Ifc4StepDeserializer;
+import pl.ds.bimserver.deserializer.IfcStepDeserializer;
 
 class IfcStepDeserializersProviderImpl implements IfcStepDeserializersProvider {
 
