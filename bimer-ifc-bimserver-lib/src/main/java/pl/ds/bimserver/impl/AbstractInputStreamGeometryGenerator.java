@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bimserver.emf.IfcModelInterface;
 import org.bimserver.geometry.Matrix;
 import org.bimserver.models.geometry.Bounds;
@@ -89,15 +90,18 @@ abstract class AbstractInputStreamGeometryGenerator {
                     geometryInfo.setBounds(bounds);
 
                     try {
-                        double area = geometryInfo.getArea();
-                        geometryInfo.setArea(area);
-                        double volume = geometryInfo.getVolume();
-                        if (volume < 0d) {
-                            volume = -volume;
+                        ObjectNode additionalData = renderEngineInstance.getAdditionalData();
+                        if (additionalData != null) {
+                            geometryInfo.setAdditionalData(additionalData.toString());
+                            if (additionalData.has("TOTAL_SURFACE_AREA")) {
+                                geometryInfo.setArea(additionalData.get("TOTAL_SURFACE_AREA").asDouble());
+                            }
+                            if (additionalData.has("TOTAL_SHAPE_VOLUME")) {
+                                geometryInfo.setVolume(additionalData.get("TOTAL_SHAPE_VOLUME").asDouble());
+                            }
                         }
-                        geometryInfo.setVolume(volume);
                     } catch (UnsupportedOperationException e) {
-                        LOGGER.trace("Exception during setting volume", e);
+                        LOGGER.trace("Exception during setting area and volume", e);
                     }
 
                     GeometryData geometryData = GeometryFactory.eINSTANCE.createGeometryData();
