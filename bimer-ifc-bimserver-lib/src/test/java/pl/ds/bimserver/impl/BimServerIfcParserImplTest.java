@@ -1,5 +1,14 @@
 package pl.ds.bimserver.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -11,15 +20,6 @@ import pl.ds.bimserver.BimServerApiException;
 import pl.ds.bimserver.BimServerIfcParser;
 import pl.ds.bimserver.test.TestDataLoader;
 import pl.ds.bimserver.test.TestUtils;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +59,10 @@ public class BimServerIfcParserImplTest {
     @Test
     public void shouldContainProjectDecomposedByBuilding() {
         IfcProject project = model("doors.ifc").getProject();
-        String firstDecomposingObjectType = project.getIsDecomposedBy().stream().findFirst().flatMap(ifcRelation -> ifcRelation.getRelatedObjects().stream().findFirst().map(IfcObjectDefinition::getType)).orElse(null);
+        String firstDecomposingObjectType = project.getIsDecomposedBy().stream()
+                .findFirst()
+                .flatMap(ifcRelation -> ifcRelation.getRelatedObjects().stream().findFirst().map(IfcObjectDefinition::getType))
+                .orElse(null);
         assertEquals("Building", firstDecomposingObjectType);
     }
 
@@ -106,9 +109,11 @@ public class BimServerIfcParserImplTest {
     }
 
     @Test
-    public void shouldReturnBimer6xPowerProjectIfcModel() throws IOException {
-        byte[] actualSerializedData = serialize(model("bim6x-power-project.ifc"));
-        byte[] expectedSerializedData = deserialize("bim6x-power-project.data");
+    public void shouldReturnIfc4ModelWithNestedLists() throws IOException {
+        // this model is copied from:
+        // https://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2_TC1/HTML/annex/annex-e/slab-standard-case.ifc
+        byte[] actualSerializedData = serialize(model4("ifc4-nested-list.ifc"));
+        byte[] expectedSerializedData = deserialize("ifc4-nested-list.data");
         assertArrayEquals(expectedSerializedData, actualSerializedData);
     }
 
@@ -129,6 +134,15 @@ public class BimServerIfcParserImplTest {
         try {
             File file = LOADER.getModelAsFile("bimServerIfcParserImplTest", name);
             return ifcParser.parseIfc2x3tc1(file);
+        } catch (BimServerApiException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static IfcModel model4(String name) {
+        try {
+            File file = LOADER.getModelAsFile("bimServerIfcParserImplTest", name);
+            return ifcParser.parseIfc4(file);
         } catch (BimServerApiException e) {
             throw new IllegalStateException(e);
         }

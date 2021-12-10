@@ -32,7 +32,7 @@ public class Main {
             IfcModel ifcModel = ifcToBimDsConverter.convert(ifcFile);
             writeObjectToStdOut(ifcModel);
         } catch (BimServerApiException e) {
-            System.err.println(e.getMessage());
+            e.printStackTrace();
             LOG.error("Error", e);
             System.exit(1);
         }
